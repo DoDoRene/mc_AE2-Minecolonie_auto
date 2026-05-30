@@ -1,0 +1,190 @@
+local my_colony = peripheral.find("colonyIntegrator")
+local my_monitor = peripheral.find("monitor")
+local my_ME = peripheral.find("meBridge")
+local my_entangled = peripheral.find("inventory") 
+
+if not my_monitor or not my_ME then
+    print("Warte auf Peripheriegeraete...")
+    sleep(2)
+    my_monitor = peripheral.find("monitor")
+    my_ME = peripheral.find("meBridge")
+end
+
+my_monitor.clear()
+my_monitor.setTextColor(colors.white)
+tabLine = 1
+my_monitor.setCursorPos(1,1)
+
+function NextLine()
+    tabLine = 1
+    Line = Line +1
+    my_monitor.setCursorPos(tabLine,Line)
+    my_monitor.clearLine()
+    return true
+end
+
+function NextTab()
+    tabLine = tabLine + 10
+    my_monitor.setCursorPos(tabLine,Line)
+    return true
+end
+
+function Write(a)
+    if a == nil then 
+        NextTab()
+        return true
+    end
+    my_monitor.write(a)
+    NextTab()
+    return true
+end
+
+function WriteBol(preStr, bol, aftStr)
+    local col = my_monitor.getTextColor()
+    local a = ""
+    if bol then
+        my_monitor.setTextColor(colors.green)
+        a = "True"
+    else
+        my_monitor.setTextColor(colors.red)
+        a = "False"
+    end
+    Write(preStr .. a .. aftStr)
+    my_monitor.setTextColor(col)
+end
+
+function MyRequests()
+    Write("-Requests-------")
+    NextLine()
+    Write("Name")
+    Write()
+    Write("| Count")
+    Write("| Status")
+    
+    if not my_colony or not my_ME then 
+        Write("| Error: Mod Missing")
+        return 
+    end
+    
+    local request = my_colony.getRequests()
+    local myList = {}
+    if my_entangled then
+        myList = my_entangled.list()
+    end
+
+    for i,v in ipairs(request) do
+        NextLine()
+
+        for j,k in ipairs(v.items) do
+            local bol = true
+            for l,m in ipairs(myList) do
+                if (m.name == k.name) then
+                    bol = false
+                    break
+                end
+            end
+            Write(v.name)
+            Write()
+            Write("| " .. v.count)
+            
+            if bol then
+                local myItem = my_ME.getItem({name=k.name})
+                if myItem == nil then
+                    Write("| No Item")
+                else
+                    local nNum = my_ME.exportItem({name=k.name, count=v.count}, "right")
+                    if nNum > 0 then
+                        print(myItem)
+                        Write("| Requesting")
+                    else
+                        if myItem.isCraftable then
+                            local craftAmount = v.count
+                            my_ME.craftItem({name=k.name, count=craftAmount})
+                            Write("| Crafting " .. craftAmount .. "x")  
+                        else
+                            Write("| No Recipe")
+                        end
+                    end
+                end
+            else
+                Write("| Waiting for pickup")
+            end
+        end
+    end
+end
+
+function MyResearch()
+    NextLine()
+    Write("-Research-------")
+    if not my_colony then return end
+    local posible = my_colony.getResearch()
+    for i,v in ipairs(posible) do
+        NextLine()
+        Write(i .. "|" .. v)
+    end 
+end
+
+function MyCitizens()
+    NextLine()
+    Write("-Citizens-------")
+    if not my_colony then return end
+    local citizens = my_colony.getCitizens()
+    NextLine()
+    Write("Name")
+    Write()
+    Write("| Job")
+    for i,v in ipairs(citizens) do
+        NextLine()
+        Write(v.name)
+        Write()
+        local mywork = v.work
+        if (mywork ~= nil) then
+            local str = mywork.job
+            Write("| " .. str:sub(22))
+        end
+    end
+end
+
+function MyBuildings()
+    NextLine()
+    Write("-Buildings------")
+    NextLine()
+    Write("Name")
+    Write("| Level")
+    Write("| Guard")
+    Write("| Build")
+    if not my_colony then return end
+    local buildings = my_colony.getBuildings()
+    for i,v in ipairs(buildings) do
+        NextLine()
+        local str = v.name
+        Write(str:sub(27))
+        Write("| " .. v.level)
+        WriteBol("| ", v.guarded, "")
+        WriteBol("| ", v.built, "") 
+    end
+end
+
+Clock = 1
+while true do
+    Line = 1
+    MyRequests()
+    if Clock < 5 then
+        MyCitizens()
+    elseif Clock < 10 then
+        MyBuildings()
+    elseif Clock < 15 then
+        MyResearch()
+    else
+        Clock = 0
+    end
+
+    while true do
+        if Line > 100 then
+            break
+        end
+        NextLine()
+    end 
+    Clock = Clock + 1
+    sleep(2)
+end
