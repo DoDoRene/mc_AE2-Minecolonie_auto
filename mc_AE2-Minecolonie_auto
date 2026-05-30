@@ -98,16 +98,21 @@ function MyRequests()
                     local meAmount = myItem.amount or myItem.count or 0
                     
                     if meAmount > 0 then
-                        local success, err = false, "Unknown"
+                        local success = 0
+                        local err = "Keine Verbindung"
                         
-                        -- Weg 1: Versuche den modernen Netzwerk-Export (Advanced Peripherals Methode)
+                        -- Methode 1: Über den Netzwerknamen, wenn beide im Modem-Netzwerk sind
                         if my_ME.exportItemToPeripheral then
                             success, err = my_ME.exportItemToPeripheral({name=k.name, count=v.count}, "entangled:tile_1")
                         end
                         
-                        -- Weg 2: Fallback auf normalen Richtungs-Export (Falls der Block direkt anliegt)
+                        -- Methode 2: Fallback auf alle Himmelsrichtungen (falls der Block direkt anliegt)
                         if not success or success == 0 then
-                            success, err = my_ME.exportItem({name=k.name, count=v.count}, "up")
+                            local directions = {"up", "down", "north", "south", "east", "west", "top", "bottom"}
+                            for _, dir in ipairs(directions) do
+                                success, err = my_ME.exportItem({name=k.name, count=v.count}, dir)
+                                if success and success > 0 then break end
+                            end
                         end
                         
                         if success and success ~= 0 then
@@ -115,7 +120,7 @@ function MyRequests()
                             Write("| Requesting")
                         else
                             print("Export-Fehler bei " .. k.name .. ": " .. tostring(err))
-                            Write("| Export Err")
+                            Write("| Inventory missing")
                         end
                     else
                         if myItem.isCraftable then
