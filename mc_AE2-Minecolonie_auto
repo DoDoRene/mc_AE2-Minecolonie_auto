@@ -95,12 +95,11 @@ function MyRequests()
                 if myItem == nil then
                     Write("| No Item")
                 else
-                    -- Hole die exakte Menge, die im ME-System existiert
                     local meAmount = myItem.amount or myItem.count or 0
                     
-                    -- Erst versuchen wir zu exportieren, wenn Items da sind
                     if meAmount > 0 then
-                        local nNum = my_ME.exportItem({name=k.name, count=v.count}, "up")
+                        -- GEÄNDERT: Exportiert direkt an den Netzwerknamen des Entangled Blocks
+                        local nNum = my_ME.exportItem({name=k.name, count=v.count}, "entangled:tile_1")
                         if nNum > 0 then
                             print("Exportiert: " .. k.name)
                             Write("| Requesting")
@@ -108,7 +107,6 @@ function MyRequests()
                             Write("| Blocked/Full")
                         end
                     else
-                        -- NUR craften, wenn absolut 0 Stück im ME-System liegen!
                         if myItem.isCraftable then
                             local craftAmount = v.count
                             my_ME.craftItem({name=k.name, count=craftAmount})
