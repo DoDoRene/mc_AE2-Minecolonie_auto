@@ -99,23 +99,46 @@ function MyRequests()
                     
                     if meAmount > 0 then
                         local success = 0
-                        local err = "Keine Verbindung"
+                        local err = "No method worked"
                         
-                        -- Methode 1: Über den Netzwerknamen, wenn beide im Modem-Netzwerk sind
+                        -- METHODE 1: Netzwerk-Export (Wenn Modems aktiv sind)
                         if my_ME.exportItemToPeripheral then
-                            success, err = my_ME.exportItemToPeripheral({name=k.name, count=v.count}, "entangled:tile_1")
-                        end
-                        
-                        -- Methode 2: Fallback auf alle Himmelsrichtungen (falls der Block direkt anliegt)
-                        if not success or success == 0 then
-                            local directions = {"up", "down", "north", "south", "east", "west", "top", "bottom"}
-                            for _, dir in ipairs(directions) do
-                                success, err = my_ME.exportItem({name=k.name, count=v.count}, dir)
-                                if success and success > 0 then break end
+                            local status, msg = pcall(function()
+                                return my_ME.exportItemToPeripheral({name=k.name, count=v.count}, "entangled:tile_1")
+                            end)
+                            if status and msg and (type(msg) == "number" and msg > 0 or type(msg) == "table") then
+                                success = 1
+                            else
+                                err = tostring(msg)
                             end
                         end
                         
-                        if success and success ~= 0 then
+                        -- METHODE 2: Fallback auf exportItem mit dem Netzwerknamen
+                        if not success or success == 0 then
+                            local status, msg = pcall(function()
+                                return my_ME.exportItem({name=k.name, count=v.count}, "entangled:tile_1")
+                            end)
+                            if status and msg and (type(msg) == "number" and msg > 0 or type(msg) == "table") then
+                                success = 1
+                            end
+                        end
+                        
+                        -- METHODE 3: Fallback auf alle Himmelsrichtungen (Falls er direkt anliegt)
+                        if not success or success == 0 then
+                            local directions = {"up", "down", "north", "south", "east", "west", "top", "bottom", "front", "back"}
+                            for _, dir in ipairs(directions) do
+                                local status, msg = pcall(function()
+                                    return my_ME.exportItem({name=k.name, count=v.count}, dir)
+                                end)
+                                if status and msg and (type(msg) == "number" and msg > 0 or type(msg) == "table") then
+                                    success = 1
+                                    break
+                                end
+                            end
+                        end
+                        
+                        -- Auswertung
+                        if success == 1 then
                             print("Erfolgreich exportiert: " .. k.name)
                             Write("| Requesting")
                         else
