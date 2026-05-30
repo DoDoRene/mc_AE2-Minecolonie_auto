@@ -98,13 +98,21 @@ function MyRequests()
                     local meAmount = myItem.amount or myItem.count or 0
                     
                     if meAmount > 0 then
-                        -- GEÄNDERT: Exportiert direkt an den Netzwerknamen des Entangled Blocks
-                        local nNum = my_ME.exportItem({name=k.name, count=v.count}, "entangled:tile_1")
-                        if nNum > 0 then
-                            print("Exportiert: " .. k.name)
+                        -- NEU: Fängt den Erfolg (success) und Fehlermeldungen (err) von AP ab
+                        local success, err = my_ME.exportItem({name=k.name, count=v.count}, "entangled:tile_1")
+                        
+                        -- Falls der Netzwerkname fehlschlägt, versuchen wir es mit der Richtung "up" als Fallback
+                        if not success or success == 0 then
+                            success, err = my_ME.exportItem({name=k.name, count=v.count}, "up")
+                        end
+                        
+                        if success and success ~= 0 then
+                            print("Erfolgreich exportiert: " .. k.name)
                             Write("| Requesting")
                         else
-                            Write("| Blocked/Full")
+                            -- Schreibt den genauen Fehlergrund in die Computer-Konsole!
+                            print("Export-Fehler bei " .. k.name .. ": " .. tostring(err))
+                            Write("| Export Err")
                         end
                     else
                         if myItem.isCraftable then
