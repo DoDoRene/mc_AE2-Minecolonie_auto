@@ -98,10 +98,14 @@ function MyRequests()
                     local meAmount = myItem.amount or myItem.count or 0
                     
                     if meAmount > 0 then
-                        -- NEU: Fängt den Erfolg (success) und Fehlermeldungen (err) von AP ab
-                        local success, err = my_ME.exportItem({name=k.name, count=v.count}, "entangled:tile_1")
+                        local success, err = false, "Unknown"
                         
-                        -- Falls der Netzwerkname fehlschlägt, versuchen wir es mit der Richtung "up" als Fallback
+                        -- Weg 1: Versuche den modernen Netzwerk-Export (Advanced Peripherals Methode)
+                        if my_ME.exportItemToPeripheral then
+                            success, err = my_ME.exportItemToPeripheral({name=k.name, count=v.count}, "entangled:tile_1")
+                        end
+                        
+                        -- Weg 2: Fallback auf normalen Richtungs-Export (Falls der Block direkt anliegt)
                         if not success or success == 0 then
                             success, err = my_ME.exportItem({name=k.name, count=v.count}, "up")
                         end
@@ -110,7 +114,6 @@ function MyRequests()
                             print("Erfolgreich exportiert: " .. k.name)
                             Write("| Requesting")
                         else
-                            -- Schreibt den genauen Fehlergrund in die Computer-Konsole!
                             print("Export-Fehler bei " .. k.name .. ": " .. tostring(err))
                             Write("| Export Err")
                         end
