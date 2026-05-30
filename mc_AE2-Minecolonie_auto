@@ -1,13 +1,13 @@
-local my_colony = peripheral.find("colonyIntegrator")
-local my_monitor = peripheral.find("monitor")
-local my_ME = peripheral.find("meBridge")
-local my_entangled = peripheral.find("inventory") 
+local my_colony = peripheral.wrap("top")
+local my_monitor = peripheral.wrap("left")
+local my_ME = peripheral.wrap("bottom")
+local my_entangled = peripheral.wrap("entangled:tile_1")
 
 if not my_monitor or not my_ME then
     print("Warte auf Peripheriegeraete...")
     sleep(2)
-    my_monitor = peripheral.find("monitor")
-    my_ME = peripheral.find("meBridge")
+    my_monitor = peripheral.wrap("left")
+    my_ME = peripheral.wrap("bottom")
 end
 
 my_monitor.clear()
@@ -92,7 +92,7 @@ function MyRequests()
                 if myItem == nil then
                     Write("| No Item")
                 else
-                    local nNum = my_ME.exportItem({name=k.name, count=v.count}, "right")
+                    local nNum = my_ME.exportItem({name=k.name, count=v.count}, "up")
                     if nNum > 0 then
                         print(myItem)
                         Write("| Requesting")
